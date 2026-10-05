@@ -56,8 +56,15 @@ section{max-width:1100px;margin:0 auto 40px;scroll-margin-top:90px}
 .tg svg{width:34px;height:34px;animation:fly 2.2s ease-in-out infinite}
 @keyframes glow{from{box-shadow:0 0 8px #1d9bf0,0 0 0 0 #1d9bf066}to{box-shadow:0 0 26px #00e5ff,0 0 0 10px #1d9bf000}}
 @keyframes fly{50%{transform:translate(3px,-3px) rotate(-8deg)}}
+#dl{display:none;margin:12px auto 0;padding:11px 26px;border:0;border-radius:30px;background:#00c46a;color:#fff;font:inherit;font-weight:700;cursor:pointer;box-shadow:0 0 16px #00c46a99}
+#ch{position:fixed;left:14px;bottom:16px;z-index:9;width:min(300px,calc(100% - 100px));display:none}#ch.on{display:block}
+#ch .in{display:flex;gap:10px;padding:12px;align-items:center;position:relative}
+#ch img{width:52px;height:52px;border-radius:50%;object-fit:cover;flex:none;background:#000}
+#ch b{display:block;font-size:16px;animation:gt 3s linear infinite}#ch p{font-size:14px;margin:2px 0 6px;color:#d9d2f5}
+#ch a{display:inline-block;padding:6px 14px;border-radius:20px;background:#ff0a78;color:#fff;text-decoration:none;font-weight:700;font-size:14px}
+#chx{position:absolute;top:2px;right:8px;background:none;border:0;color:#fff;font-size:20px;cursor:pointer}
 #md{position:fixed;inset:0;background:#000d;z-index:20;display:none;align-items:center;justify-content:center;padding:14px}
-#md.on{display:flex}
+#md.on{display:flex;flex-direction:column}
 #md .box{width:min(960px,100%)}
 #md .v{aspect-ratio:16/9;width:100%;background:#000}
 #md iframe{width:100%;height:100%;border:0;display:block}
@@ -75,7 +82,9 @@ section{max-width:1100px;margin:0 auto 40px;scroll-margin-top:90px}
 <a class="tg" id="tg" href="#" target="_blank" rel="noopener" style="display:none">
 <svg viewBox="0 0 24 24" fill="#fff"><path d="M9.8 15.3l-.4 4.2c.6 0 .9-.3 1.2-.6l2.9-2.7 6 4.4c1.1.6 1.9.3 2.2-1l3.9-18.4c.4-1.6-.6-2.3-1.7-1.9L1.2 9.4c-1.5.6-1.5 1.5-.3 1.9l5.9 1.8L20.5 5c.6-.4 1.2-.2.7.2z"/></svg>
 <span id="tgl">টেলিগ্রামে জয়েন করুন</span></a>
-<div id="md"><button id="x" aria-label="বন্ধ">×</button><div class="box neon"><div class="in"><div class="v" id="v"></div></div></div></div>
+<div id="md"><button id="x" aria-label="বন্ধ">×</button><div class="box neon"><div class="in"><div class="v" id="v"></div></div></div><div style="text-align:center" id="dlw"></div></div>
+<button id="dl">⬇ ডাউনলোড</button>
+<div id="ch" class="neon"><div class="in"><button id="chx" aria-label="বন্ধ">×</button><img id="chi" alt=""><div><b id="chn"></b><p id="chm"></p><a id="chl" target="_blank" rel="noopener">চ্যাট করুন</a></div></div></div>
 <div id="toast"></div>
 <script>
 const DB="https://bangla-viral-video-x-default-rtdb.asia-southeast1.firebasedatabase.app"; // Firebase Realtime Database URL
@@ -84,7 +93,7 @@ const esc=s=>String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 function embedSrc(s){s=(s||"").trim();const m=s.match(/<iframe[^>]+src=["']([^"']+)/i);if(m)s=m[1];
 const y=s.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{6,})/);if(y)return"https://www.youtube.com/embed/"+y[1]+"?autoplay=1";
 return s.startsWith("//")?"https:"+s:s}
-let vids=[],S={};
+let vids=[],S={},A2={};
 function toast(t){const e=document.getElementById("toast");e.textContent=t;e.style.display="block";clearTimeout(e._t);e._t=setTimeout(()=>e.style.display="none",2600)}
 async function init(){
  const [v,s]=await Promise.all([fetch(`${DB}/sites/${SITE}/videos.json`).then(r=>r.json()).catch(()=>null),fetch(`${DB}/sites/${SITE}/settings.json`).then(r=>r.json()).catch(()=>null)]);
@@ -95,6 +104,9 @@ async function init(){
  if(S.telegram){const t=document.getElementById("tg");t.href=S.telegram;t.style.display="flex";if(S.tgLabel)document.getElementById("tgl").textContent=S.tgLabel}
  const sc=await fetch(`${DB}/sites/${SITE}/sections.json`).then(r=>r.json()).catch(()=>null);
  SEC=sc?Object.entries(sc).map(([id,o])=>({id,...o})).sort((a,b)=>(a.order||0)-(b.order||0)):DEF.map(([id,name])=>({id,name}));
+ const [a2,ch]=await Promise.all([fetch(`${DB}/sites/${SITE}/ads2.json`).then(r=>r.json()).catch(()=>null),fetch(`${DB}/sites/${SITE}/chat.json`).then(r=>r.json()).catch(()=>null)]);
+ A2=a2||{};[A2.monS,A2.adsS].forEach(u=>{u=(u||"").trim();if(/^(https:)?\/\//.test(u)){const e=document.createElement("script");e.src=u.startsWith("//")?"https:"+u:u;e.async=true;document.head.appendChild(e)}});
+ if(ch&&ch.link&&!sessionStorage.chx){document.getElementById("chn").textContent=ch.name||"";document.getElementById("chm").textContent=ch.msg||"";document.getElementById("chl").href=ch.link;const im=document.getElementById("chi");if(ch.img)im.src=ch.img;else im.style.display="none";setTimeout(()=>document.getElementById("ch").classList.add("on"),4000)}
  render();
 }
 const DEF=[["new","নতুন ভিডিও"],["viral","ভাইরাল ভিডিও"],["trend","ট্রেন্ডিং ভিডিও"],["village","গ্রামের ভিডিও"],["tiktok","টিকটকারদের ভিডিও"],["comedy","কমেডি ভিডিও"],["music","নাচ-গানের ভিডিও"],["sports","খেলাধুলার ভিডিও"],["news","নিউজ ভিডিও"]];
@@ -119,14 +131,17 @@ document.getElementById("g").addEventListener("click",e=>{
  const sh=e.target.closest("[data-share]");
  if(sh){const o=vids.find(x=>x.id===sh.dataset.share),u=location.href.split("#")[0];if(navigator.share)navigator.share({title:o.title,url:u}).catch(()=>{});else{navigator.clipboard&&navigator.clipboard.writeText(u);toast("লিংক কপি হয়েছে")}return}
  const c=e.target.closest(".card");if(!c)return;
- const o=vids.find(x=>x.id===c.dataset.id),k="c_"+o.id,n=+sessionStorage.getItem(k)||0,L=ads();
- if(n<need()&&L.length){sessionStorage.setItem(k,n+1);window.open(L[n%L.length],"_blank");toast(`ধাপ ${n+1}/${need()} — ভিডিও দেখতে আবার ক্লিক করুন`);return}
+ const o=vids.find(x=>x.id===c.dataset.id),k="c_"+o.id,n=+sessionStorage.getItem(k)||0,L=ads(),U=(n<3&&[A2.pop,A2.glob,A2.mon][n])||(L.length?L[n%L.length]:"");
+ if(n<need()&&U){sessionStorage.setItem(k,n+1);window.open(U,"_blank");toast(`ধাপ ${n+1}/${need()} — ভিডিও দেখতে আবার ক্লিক করুন`);return}
  sessionStorage.removeItem(k);
  document.getElementById("v").innerHTML=`<iframe src="${esc(embedSrc(o.embed))}" allow="autoplay;fullscreen;encrypted-media" allowfullscreen></iframe>`;
  document.getElementById("md").classList.add("on");
+ const d=document.getElementById("dl");d._ad=0;d.textContent="⬇ ডাউনলোড";d.dataset.u=o.dl||"";document.getElementById("dlw").appendChild(d);d.style.display=o.dl?"inline-block":"none";
  o.views=(o.views||0)+1;fetch(`${DB}/sites/${SITE}/videos/${o.id}.json`,{method:"PATCH",body:JSON.stringify({views:o.views})}).catch(()=>{});
 });
-function closeM(){document.getElementById("md").classList.remove("on");document.getElementById("v").innerHTML=""}
+document.getElementById("dl").onclick=e=>{const d=e.currentTarget,u=d.dataset.u;if(A2.dl&&!d._ad){d._ad=1;window.open(A2.dl,"_blank");d.textContent="⬇ এবার ডাউনলোড করুন";return}window.open(u,"_blank")};
+document.getElementById("chx").onclick=()=>{document.getElementById("ch").classList.remove("on");sessionStorage.chx=1};
+function closeM(){document.getElementById("md").classList.remove("on");document.getElementById("v").innerHTML="";document.getElementById("dl").style.display="none"}
 document.getElementById("x").onclick=closeM;
 document.getElementById("md").addEventListener("click",e=>{if(e.target.id==="md")closeM()});
 init();
