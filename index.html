@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
- <script src="https://pl31668378.profitableratecpmnetwork.com/c7/d9/3c/c7d93c570f2f2d83a78282a5407870cd.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ভাইরাল ভিডিও কালেকশন</title>
@@ -95,6 +94,7 @@ function embedSrc(s){s=(s||"").trim();const m=s.match(/<iframe[^>]+src=["']([^"'
 const y=s.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{6,})/);if(y)return"https://www.youtube.com/embed/"+y[1]+"?autoplay=1";
 return s.startsWith("//")?"https:"+s:s}
 let vids=[],S={},A2={};
+const fixU=u=>{u=(u||"").trim();if(!u)return"";if(u.startsWith("//"))return"https:"+u;return/^[a-z][a-z0-9+.-]*:/i.test(u)?u:"https://"+u};
 function toast(t){const e=document.getElementById("toast");e.textContent=t;e.style.display="block";clearTimeout(e._t);e._t=setTimeout(()=>e.style.display="none",2600)}
 async function init(){
  const [v,s]=await Promise.all([fetch(`${DB}/sites/${SITE}/videos.json`).then(r=>r.json()).catch(()=>null),fetch(`${DB}/sites/${SITE}/settings.json`).then(r=>r.json()).catch(()=>null)]);
@@ -102,12 +102,12 @@ async function init(){
  vids=Object.entries(v||{}).map(([id,o])=>({id,...o})).sort((a,b)=>(b.ts||0)-(a.ts||0));
  if(S.siteName){document.getElementById("sn").textContent=S.siteName;document.title=S.siteName}
  if(S.marquee)document.getElementById("mq").textContent=S.marquee;
- if(S.telegram){const t=document.getElementById("tg");t.href=S.telegram;t.style.display="flex";if(S.tgLabel)document.getElementById("tgl").textContent=S.tgLabel}
+ if(S.telegram){const t=document.getElementById("tg");t.href=fixU(S.telegram);t.style.display="flex";if(S.tgLabel)document.getElementById("tgl").textContent=S.tgLabel}
  const sc=await fetch(`${DB}/sites/${SITE}/sections.json`).then(r=>r.json()).catch(()=>null);
  SEC=sc?Object.entries(sc).map(([id,o])=>({id,...o})).sort((a,b)=>(a.order||0)-(b.order||0)):DEF.map(([id,name])=>({id,name}));
  const [a2,ch]=await Promise.all([fetch(`${DB}/sites/${SITE}/ads2.json`).then(r=>r.json()).catch(()=>null),fetch(`${DB}/sites/${SITE}/chat.json`).then(r=>r.json()).catch(()=>null)]);
  A2=a2||{};[A2.monS,A2.adsS].forEach(u=>{u=(u||"").trim();if(/^(https:)?\/\//.test(u)){const e=document.createElement("script");e.src=u.startsWith("//")?"https:"+u:u;e.async=true;document.head.appendChild(e)}});
- if(ch&&ch.link&&!sessionStorage.chx){document.getElementById("chn").textContent=ch.name||"";document.getElementById("chm").textContent=ch.msg||"";document.getElementById("chl").href=ch.link;const im=document.getElementById("chi");if(ch.img)im.src=ch.img;else im.style.display="none";setTimeout(()=>document.getElementById("ch").classList.add("on"),4000)}
+ if(ch&&ch.link&&!sessionStorage.chx){document.getElementById("chn").textContent=ch.name||"";document.getElementById("chm").textContent=ch.msg||"";document.getElementById("chl").href=fixU(ch.link);const im=document.getElementById("chi");if(ch.img)im.src=ch.img;else im.style.display="none";setTimeout(()=>document.getElementById("ch").classList.add("on"),4000)}
  render();
 }
 const DEF=[["new","নতুন ভিডিও"],["viral","ভাইরাল ভিডিও"],["trend","ট্রেন্ডিং ভিডিও"],["village","গ্রামের ভিডিও"],["tiktok","টিকটকারদের ভিডিও"],["comedy","কমেডি ভিডিও"],["music","নাচ-গানের ভিডিও"],["sports","খেলাধুলার ভিডিও"],["news","নিউজ ভিডিও"]];
@@ -127,12 +127,12 @@ document.getElementById("sb").onclick=()=>{const b=document.querySelector(".srch
 document.getElementById("mn").onclick=()=>document.getElementById("dr").classList.toggle("on");
 document.getElementById("g").addEventListener("click",e=>{const b=e.target.closest("[data-more]");if(b){lim[b.dataset.more]=(lim[b.dataset.more]||6)+6;render()}});
 const need=()=>Math.max(0,parseInt(S.redirects??4));
-const ads=()=>String(S.ads||"").split("\n").map(x=>x.trim()).filter(Boolean);
+const ads=()=>String(S.ads||"").split("\n").map(x=>fixU(x)).filter(Boolean);
 document.getElementById("g").addEventListener("click",e=>{
  const sh=e.target.closest("[data-share]");
  if(sh){const o=vids.find(x=>x.id===sh.dataset.share),u=location.href.split("#")[0];if(navigator.share)navigator.share({title:o.title,url:u}).catch(()=>{});else{navigator.clipboard&&navigator.clipboard.writeText(u);toast("লিংক কপি হয়েছে")}return}
  const c=e.target.closest(".card");if(!c)return;
- const o=vids.find(x=>x.id===c.dataset.id),k="c_"+o.id,n=+sessionStorage.getItem(k)||0,L=ads(),U=(n<3&&[A2.pop,A2.glob,A2.mon][n])||(L.length?L[n%L.length]:"");
+ const o=vids.find(x=>x.id===c.dataset.id),k="c_"+o.id,n=+sessionStorage.getItem(k)||0,L=ads(),U=fixU(n<3&&[A2.pop,A2.glob,A2.mon][n])||(L.length?L[n%L.length]:"");
  if(n<need()&&U){sessionStorage.setItem(k,n+1);window.open(U,"_blank");toast(`ধাপ ${n+1}/${need()} — ভিডিও দেখতে আবার ক্লিক করুন`);return}
  sessionStorage.removeItem(k);
  document.getElementById("v").innerHTML=`<iframe src="${esc(embedSrc(o.embed))}" allow="autoplay;fullscreen;encrypted-media" allowfullscreen></iframe>`;
@@ -140,7 +140,7 @@ document.getElementById("g").addEventListener("click",e=>{
  const d=document.getElementById("dl");d._ad=0;d.textContent="⬇ ডাউনলোড";d.dataset.u=o.dl||"";document.getElementById("dlw").appendChild(d);d.style.display=o.dl?"inline-block":"none";
  o.views=(o.views||0)+1;fetch(`${DB}/sites/${SITE}/videos/${o.id}.json`,{method:"PATCH",body:JSON.stringify({views:o.views})}).catch(()=>{});
 });
-document.getElementById("dl").onclick=e=>{const d=e.currentTarget,u=d.dataset.u;if(A2.dl&&!d._ad){d._ad=1;window.open(A2.dl,"_blank");d.textContent="⬇ এবার ডাউনলোড করুন";return}window.open(u,"_blank")};
+document.getElementById("dl").onclick=e=>{const d=e.currentTarget,u=d.dataset.u;if(A2.dl&&!d._ad){d._ad=1;window.open(fixU(A2.dl),"_blank");d.textContent="⬇ এবার ডাউনলোড করুন";return}window.open(fixU(u),"_blank")};
 document.getElementById("chx").onclick=()=>{document.getElementById("ch").classList.remove("on");sessionStorage.chx=1};
 function closeM(){document.getElementById("md").classList.remove("on");document.getElementById("v").innerHTML="";document.getElementById("dl").style.display="none"}
 document.getElementById("x").onclick=closeM;
@@ -148,5 +148,4 @@ document.getElementById("md").addEventListener("click",e=>{if(e.target.id==="md"
 init();
 </script>
 </body>
- <script src="https://pl31668379.profitableratecpmnetwork.com/90/f9/d0/90f9d037160d3fee19da4bea5010873a.js"></script>
 </html>
