@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>অ্যাডমিন প্যানেল</title>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}
+body{background:#09061a;color:#f3eeff;font-family:'Hind Siliguri',system-ui,sans-serif;padding:16px;max-width:820px;margin:auto}
+h2{margin:22px 0 10px;font-size:20px}
+.p{background:#161033;border:1px solid #3a2a78;border-radius:14px;padding:16px}
+label{display:block;margin:10px 0 4px;color:#b9aee6;font-size:14px}
+select,input,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #4a3a90;background:#0e0828;color:#fff;font:inherit}
+textarea{min-height:80px}
+button{padding:10px 18px;border:0;border-radius:10px;font:inherit;font-weight:700;cursor:pointer;background:#ff0a78;color:#fff;margin-top:12px}
+button.g{background:#2b2160}button.d{background:#c0162b;margin:0}
+.row{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #2a2058}
+.row img{width:96px;aspect-ratio:16/9;object-fit:cover;border-radius:8px;background:#000}
+.row b{flex:1;word-break:break-word}
+#pv{max-width:200px;margin-top:8px;border-radius:8px;display:none}
+#msg{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#00ff9d;color:#012;padding:9px 18px;border-radius:30px;font-weight:700;display:none}
+</style>
+</head>
+<body>
+<div id="lock" class="p" style="margin-top:60px"><h2>অ্যাডমিন লগইন</h2><label>পাসওয়ার্ড</label><input id="pw" type="password"><button onclick="login()">প্রবেশ করুন</button></div>
+<div id="app" style="display:none">
+<h2 id="ft">নতুন ভিডিও যোগ করুন</h2>
+<div class="p">
+<label>সেকশন নির্বাচন করুন</label><select id="sc"></select>
+<label>ভিডিওর শিরোনাম</label><input id="t">
+<label>থাম্বনেল (লিংক দিন অথবা নিচে ছবি আপলোড করুন)</label><input id="th" placeholder="https://...jpg">
+<input id="f" type="file" accept="image/*" style="margin-top:8px"><img id="pv">
+<label>ভিডিও এমবেড কোড বা লিংক (iframe কোড / YouTube লিংক)</label><textarea id="e"></textarea>
+<button onclick="save()" id="sb">ভিডিও সেভ করুন</button> <button class="g" onclick="reset()">ফর্ম খালি করুন</button>
+</div>
+<h2>সেকশন ম্যানেজ করুন</h2>
+<div class="p"><div id="sl"></div><label>নতুন সেকশনের নাম</label><input id="ns" placeholder="যেমন: কমেডি ভিডিও"><button onclick="addSc()">সেকশন যোগ করুন</button></div>
+<h2>সেটিংস</h2>
+<div class="p">
+<label>সাইটের নাম (লোগোর পাশে)</label><input id="sn">
+<label>উপরের স্ক্রলিং লেখা</label><input id="mq">
+<label>এড লিংক (প্রতি লাইনে একটি; ক্রমানুযায়ী ব্যবহার হবে)</label><textarea id="ads"></textarea>
+<label>এড রিডাইরেক্ট সংখ্যা (ভিডিও আসার আগে)</label><input id="rd" type="number" min="0" value="4">
+<label>টেলিগ্রাম চ্যানেল/গ্রুপ লিংক</label><input id="tg" placeholder="https://t.me/yourchannel">
+<label>টেলিগ্রাম বাটনের লেখা</label><input id="tl" value="টেলিগ্রামে জয়েন করুন">
+<button onclick="saveS()">সেটিংস সেভ করুন</button>
+</div>
+<h2>সব ভিডিও (<span id="cnt">0</span>)</h2><div class="p" id="list"></div>
+</div>
+<div id="msg"></div>
+<script>
+const DB="https://usa-trending-x-default-rtdb.firebaseio.com"; // same Firebase URL as index.html
+const SITE="site1"; // must match index.html
+const PASS="admin123"; // CHANGE THIS before deploying
+const $=i=>document.getElementById(i),B=`${DB}/sites/${SITE}`;
+let V={},SC={},edit=null,img="";
+const DEF=[["new","নতুন ভিডিও"],["viral","ভাইরাল ভিডিও"],["trend","ট্রেন্ডিং ভিডিও"],["village","গ্রামের ভিডিও"],["tiktok","টিকটকারদের ভিডিও"],["comedy","কমেডি ভিডিও"],["music","নাচ-গানের ভিডিও"],["sports","খেলাধুলার ভিডিও"],["news","নিউজ ভিডিও"]];
+const esc=s=>String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function msg(t){const m=$("msg");m.textContent=t;m.style.display="block";setTimeout(()=>m.style.display="none",2200)}
+function login(){if($("pw").value===PASS){sessionStorage.adm=1;start()}else msg("ভুল পাসওয়ার্ড")}
+$("pw").addEventListener("keydown",e=>e.key==="Enter"&&login());
+async function start(){$("lock").style.display="none";$("app").style.display="block";
+ const s=await fetch(B+"/settings.json").then(r=>r.json())||{};
+ $("sn").value=s.siteName||"ভাইরাল ভিডিও কালেকশন";$("mq").value=s.marquee||"নতুন নতুন ভাইরাল ভিডিওর কালেকশন দেখুন";$("ads").value=s.ads||"";$("rd").value=s.redirects??4;$("tg").value=s.telegram||"";$("tl").value=s.tgLabel||"টেলিগ্রামে জয়েন করুন";
+ await loadSc();load()}
+async function loadSc(){SC=await fetch(B+"/sections.json").then(r=>r.json());
+ if(!SC){SC={};DEF.forEach(([id,n],i)=>SC[id]={name:n,order:i});await fetch(B+"/sections.json",{method:"PUT",body:JSON.stringify(SC)})}
+ const e=Object.entries(SC).sort((x,y)=>(x[1].order||0)-(y[1].order||0)),cur=$("sc").value;
+ $("sc").innerHTML=e.map(([id,o])=>`<option value="${id}">${esc(o.name)}</option>`).join("");if(cur)$("sc").value=cur;
+ $("sl").innerHTML=e.map(([id,o])=>`<div class="row"><b>${esc(o.name)}</b><button class="g" style="margin:0" onclick="renSc('${id}')">নাম বদলান</button><button class="d" onclick="delSc('${id}')">মুছুন</button></div>`).join("")}
+async function addSc(){const n=$("ns").value.trim();if(!n)return msg("সেকশনের নাম লিখুন");await fetch(`${B}/sections/s${Date.now()}.json`,{method:"PUT",body:JSON.stringify({name:n,order:Date.now()})});$("ns").value="";msg("সেকশন যোগ হয়েছে");loadSc()}
+async function renSc(id){const n=prompt("নতুন নাম",SC[id].name);if(!n||!n.trim())return;await fetch(`${B}/sections/${id}.json`,{method:"PATCH",body:JSON.stringify({name:n.trim()})});msg("নাম বদলেছে");await loadSc();load()}
+async function delSc(id){if(!confirm("সেকশন মুছলে এর ভিডিওগুলো 'অন্যান্য' এ যাবে। মুছবেন?"))return;await fetch(`${B}/sections/${id}.json`,{method:"DELETE"});msg("সেকশন মুছেছে");await loadSc();load()}
+async function load(){V=await fetch(B+"/videos.json").then(r=>r.json())||{};
+ const a=Object.entries(V).sort((x,y)=>(y[1].ts||0)-(x[1].ts||0));
+ $("cnt").textContent=a.length;
+ $("list").innerHTML=a.length?a.map(([id,o])=>`<div class="row"><img src="${esc(o.thumb)}"><b>${esc(o.title)}<br><small style="color:#9a8fc4">👁 ${o.views||0} · ${esc((SC[o.sec]||{}).name||"অন্যান্য")}</small></b><button class="g" style="margin:0" onclick="ed('${id}')">এডিট</button><button class="d" onclick="del('${id}')">মুছুন</button></div>`).join(""):"কোনো ভিডিও নেই।"}
+$("f").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const w=Math.min(640,im.width),c=document.createElement("canvas");c.width=w;c.height=im.height*w/im.width;c.getContext("2d").drawImage(im,0,0,c.width,c.height);img=c.toDataURL("image/jpeg",.75);$("pv").src=img;$("pv").style.display="block"};im.src=r.result};r.readAsDataURL(f)};
+async function save(){const o={sec:$("sc").value,title:$("t").value.trim(),thumb:img||$("th").value.trim(),embed:$("e").value.trim()};
+ if(!o.sec||!o.title||!o.thumb||!o.embed)return msg("শিরোনাম, থাম্বনেল ও ভিডিও দিন");
+ if(edit)await fetch(`${B}/videos/${edit}.json`,{method:"PATCH",body:JSON.stringify(o)});
+ else await fetch(B+"/videos.json",{method:"POST",body:JSON.stringify({...o,ts:Date.now()})});
+ msg("সেভ হয়েছে");reset();load()}
+function reset(){edit=null;img="";["t","th","e","f"].forEach(i=>$(i).value="");$("pv").style.display="none";$("ft").textContent="নতুন ভিডিও যোগ করুন";$("sb").textContent="ভিডিও সেভ করুন"}
+function ed(id){const o=V[id];edit=id;if(o.sec)$("sc").value=o.sec;img="";$("t").value=o.title;$("th").value=o.thumb.startsWith("data:")?"":o.thumb;$("e").value=o.embed;if(o.thumb.startsWith("data:")){img=o.thumb;$("pv").src=img;$("pv").style.display="block"}$("ft").textContent="ভিডিও এডিট করুন";$("sb").textContent="পরিবর্তন সেভ করুন";scrollTo(0,0)}
+async function del(id){if(!confirm("ভিডিওটি মুছে ফেলবেন?"))return;await fetch(`${B}/videos/${id}.json`,{method:"DELETE"});msg("মুছে ফেলা হয়েছে");load()}
+async function saveS(){await fetch(B+"/settings.json",{method:"PUT",body:JSON.stringify({siteName:$("sn").value.trim(),marquee:$("mq").value.trim(),ads:$("ads").value.trim(),redirects:+$("rd").value||0,telegram:$("tg").value.trim(),tgLabel:$("tl").value.trim()})});msg("সেটিংস সেভ হয়েছে")}
+if(sessionStorage.adm)start();
+</script>
+</body>
+</html>
